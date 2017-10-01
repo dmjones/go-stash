@@ -18,7 +18,7 @@ Create a new Stash, which auto-flushes to disk:
 ```Go
 stash, err := stash.NewStash(filename, true)
 if err != nil {
-	// handle error
+    // handle error
 }
 ```
 
