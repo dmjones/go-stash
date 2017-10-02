@@ -1,6 +1,6 @@
 # go-stash
 
-Go-stash is a Go library providing an in-memory data store, backed by a file on disk. It's designed for simple object storage when you don't need the overhead of a proper database.
+Go-stash provides an in-memory data store, backed by a file on disk. It's designed for simple object storage when you don't need the overhead of a proper database.
 
 
 Stash instances are safe for concurrent use by multiple goroutines. Data is serialized to disk using `json.Marshal()`, please see [the JSON docs](https://golang.org/pkg/encoding/json/#Marshal) to understand how values are encoded to JSON.
@@ -10,6 +10,10 @@ Stash instances are safe for concurrent use by multiple goroutines. Data is seri
 ```bash
 $ go get -u github.com/dmjones500/go-stash/stash
 ```
+
+## Documentation
+
+https://godoc.org/github.com/dmjones500/go-stash/stash
 
 ## Quick Start
 
