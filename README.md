@@ -1,5 +1,7 @@
 # go-stash
 
+[![Build Status](https://travis-ci.org/dmjones500/go-stash.svg?branch=master)](https://travis-ci.org/dmjones500/go-stash)
+
 Go-stash provides an in-memory data store, backed by a file on disk. It's designed for simple object storage when you don't need the overhead of a proper database.
 
 
