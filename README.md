@@ -48,6 +48,12 @@ If you don't enable auto-flush, then call `Flush()` when you want to persist all
 err = stash.Flush()
 ```
 
+If a key doesn't exist, you'll get a `NoSuchKeyError`. The destination object will not be changed:
+
+```Go
+err = stash.Read("notExist", &foo) // returns a NoSuchKeyError, foo is unaltered
+```
+
 ## License
 
 Go-stash is licensed under the [MIT License](https://opensource.org/licenses/MIT).
