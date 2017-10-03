@@ -21,8 +21,10 @@ package stash
 
 import (
 	"fmt"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"io/ioutil"
 	"math/rand"
 	"os"
 	"testing"
@@ -107,4 +109,94 @@ func TestEmptyFileWriteThenRead(t *testing.T) {
 
 	assert.Equal(t, s1, s1x)
 	assert.Equal(t, s2, s2x)
+}
+
+func TestErrorString(t *testing.T) {
+	err := UnknownVersionError{42}
+	result := err.Error()
+	require.Equal(t, "unsupported version number 42", result)
+}
+
+type Unmarshallable int
+
+func (u Unmarshallable) MarshalJSON() ([]byte, error) {
+	return nil, errors.New("error!")
+}
+
+func TestUnmarshallableFile(t *testing.T) {
+	filename := makeTempFilename()
+	defer os.Remove(filename)
+
+	s, err := NewStash(filename, true)
+	require.Nil(t, err)
+
+	u := Unmarshallable(42)
+	err = s.Save("blah", u)
+	require.NotNil(t, err)
+}
+
+func TestImpossibleVersionChange1(t *testing.T) {
+	filename := makeTempFilename()
+	defer os.Remove(filename)
+
+	s, err := NewStash(filename, true)
+	require.Nil(t, err)
+
+	// Imagine we somehow don't support the current version
+	s.version = 42
+	err = s.Save("Foo", "Bar")
+	require.NotNil(t, err)
+	_, ok := err.(UnknownVersionError)
+	require.True(t, ok)
+
+	var s2 string
+	err = s.Read("irrelevant", &s2)
+	require.NotNil(t, err)
+	_, ok = err.(UnknownVersionError)
+	require.True(t, ok)
+}
+
+func TestBadFile(t *testing.T) {
+	filename := makeTempFilename()
+	defer os.Remove(filename)
+
+	// write random stuff
+	err := ioutil.WriteFile(filename, []byte("foobarbaz"), 0600)
+	require.Nil(t, err)
+
+	_, err = NewStash(filename, true)
+	require.NotNil(t, err)
+}
+
+func TestUnreadableFile(t *testing.T) {
+	filename := makeTempFilename()
+	defer os.Remove(filename)
+
+	_, err := NewStash(filename, true)
+	require.Nil(t, err)
+
+	os.Chmod(filename, 0000)
+
+	_, err = NewStash(filename, true)
+	require.NotNil(t, err)
+}
+
+func TestUnsupportedVersionInFile(t *testing.T) {
+	// Manually write out a future version file
+	// Note: this relies on the fact that Flush doesn't check versions
+
+	filename := makeTempFilename()
+	defer os.Remove(filename)
+
+	s, err := NewStash(filename, false)
+	require.Nil(t, err)
+	s.version = 42
+
+	err = s.Flush()
+	require.Nil(t, err)
+
+	_, err = NewStash(filename, false)
+	require.NotNil(t, err)
+	_, ok := err.(UnknownVersionError)
+	require.True(t, ok)
 }
