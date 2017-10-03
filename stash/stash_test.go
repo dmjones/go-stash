@@ -111,10 +111,16 @@ func TestEmptyFileWriteThenRead(t *testing.T) {
 	assert.Equal(t, s2, s2x)
 }
 
-func TestErrorString(t *testing.T) {
+func TestUnknownVersionErrorString(t *testing.T) {
 	err := UnknownVersionError{42}
 	result := err.Error()
 	require.Equal(t, "unsupported version number 42", result)
+}
+
+func TestNoSuchKeyErrorString(t *testing.T) {
+	err := NoSuchKeyError{"foo"}
+	result := err.Error()
+	require.Equal(t, "no such key: foo", result)
 }
 
 type Unmarshallable int
