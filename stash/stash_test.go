@@ -200,3 +200,17 @@ func TestUnsupportedVersionInFile(t *testing.T) {
 	_, ok := err.(UnknownVersionError)
 	require.True(t, ok)
 }
+
+func TestNonExistantKey(t *testing.T) {
+	filename := makeTempFilename()
+	defer os.Remove(filename)
+
+	s, err := NewStash(filename, false)
+	require.Nil(t, err)
+
+	var s2 string
+	err = s.Read("Wasn't there", &s2)
+	require.NotNil(t, err)
+	_, ok := err.(NoSuchKeyError)
+	require.True(t, ok)
+}

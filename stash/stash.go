@@ -42,6 +42,15 @@ func (e UnknownVersionError) Error() string {
 	return fmt.Sprintf("unsupported version number %d", e.badVersion)
 }
 
+// NoSuchKeyError indicates that a key does not exist in the database
+type NoSuchKeyError struct {
+	s string
+}
+
+func (e NoSuchKeyError) Error() string {
+	return fmt.Sprintf("no such key: %s", e.s)
+}
+
 // Stash is a simple in-memory data store, backed by a file on disk. Create a Stash by calling
 // the NewStash factory method. It is safe for multiple goroutines to call a Stash's methods
 // concurrently.
@@ -105,7 +114,12 @@ func (s *Stash) Read(key string, ptr interface{}) error {
 		data := s.data.(v1Data)
 		s.mutex.Lock()
 		defer s.mutex.Unlock()
-		return json.Unmarshal(data[key], ptr)
+		if item, ok := data[key]; ok {
+			return json.Unmarshal(item, ptr)
+		} else {
+			return NoSuchKeyError{""}
+		}
+
 	default:
 		return UnknownVersionError{s.version}
 	}
