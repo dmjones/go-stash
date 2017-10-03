@@ -70,24 +70,24 @@ type v1Data map[string]json.RawMessage
 // Values are stored using JSON marshalling, which means unexported fields
 // will not be saved. See the documentation for the json package for more
 // information.
-func (jd *Stash) Save(key string, value interface{}) error {
-	switch jd.version {
+func (s *Stash) Save(key string, value interface{}) error {
+	switch s.version {
 	case version1:
 		marshalledData, err := json.Marshal(value)
 		if err != nil {
 			return errors.Wrap(err, "error marshalling value")
 		}
-		jd.mutex.Lock()
-		jd.data.(v1Data)[key] = marshalledData
-		jd.mutex.Unlock()
+		s.mutex.Lock()
+		s.data.(v1Data)[key] = marshalledData
+		s.mutex.Unlock()
 
-		if jd.autoFlush {
-			return jd.Flush()
+		if s.autoFlush {
+			return s.Flush()
 		} else {
 			return nil
 		}
 	default:
-		return UnknownVersionError{jd.version}
+		return UnknownVersionError{s.version}
 	}
 }
 
@@ -99,39 +99,39 @@ func (jd *Stash) Save(key string, value interface{}) error {
 //   if err != nil {
 //     ...
 //   }
-func (jd Stash) Read(key string, ptr interface{}) error {
-	switch jd.version {
+func (s *Stash) Read(key string, ptr interface{}) error {
+	switch s.version {
 	case version1:
-		data := jd.data.(v1Data)
-		jd.mutex.Lock()
-		defer jd.mutex.Unlock()
+		data := s.data.(v1Data)
+		s.mutex.Lock()
+		defer s.mutex.Unlock()
 		return json.Unmarshal(data[key], ptr)
 	default:
-		return UnknownVersionError{jd.version}
+		return UnknownVersionError{s.version}
 	}
 }
 
 // Flush writes the content of the in-memory database to disk. There
 // is no need to call Flush if auto-flushing is enabled.
-func (jd Stash) Flush() error {
-	jd.mutex.Lock()
-	defer jd.mutex.Unlock()
-	jsonData, err := json.Marshal(jd.data)
+func (s *Stash) Flush() error {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	jsonData, err := json.Marshal(s.data)
 	if err != nil {
 		return errors.WithMessage(err, "failed to marshal data")
 	}
 
-	container := container{Version: jd.version, Data: jsonData}
+	container := container{Version: s.version, Data: jsonData}
 	jsonFileData, err := json.Marshal(container)
 
-	err = ioutil.WriteFile(jd.file, jsonFileData, 0600)
-	return errors.WithMessage(err, fmt.Sprintf("failed to write database to '%s'", jd.file))
+	err = ioutil.WriteFile(s.file, jsonFileData, 0600)
+	return errors.WithMessage(err, fmt.Sprintf("failed to write database to '%s'", s.file))
 }
 
 // readFromDisk reads the contents of jd.file into memory. This function will
 // return an error if the file is not a Stash file.
-func (jd *Stash) readFromDisk() error {
-	data, err := ioutil.ReadFile(jd.file)
+func (s *Stash) readFromDisk() error {
+	data, err := ioutil.ReadFile(s.file)
 	if err != nil {
 		return err
 	}
@@ -142,19 +142,19 @@ func (jd *Stash) readFromDisk() error {
 		return errors.Wrap(err, "failed to unmarshal outer data structure")
 	}
 
-	jd.version = container.Version
+	s.version = container.Version
 
-	switch jd.version {
+	switch s.version {
 	case version1:
 		v1data := v1Data{}
 		err = json.Unmarshal(container.Data, &v1data)
 		if err != nil {
 			return errors.Wrap(err, "failed to unwrap v1 data")
 		}
-		jd.data = v1data
+		s.data = v1data
 		return nil
 	default:
-		return UnknownVersionError{jd.version}
+		return UnknownVersionError{s.version}
 	}
 }
 
