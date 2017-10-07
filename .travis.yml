@@ -5,9 +5,6 @@ go:
   - 1.9
   - master
 
-env:
-  - TMPDIR=/tmp/
-
 before_install:
   - go get -t -v ./...
 

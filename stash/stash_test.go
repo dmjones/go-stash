@@ -44,7 +44,7 @@ type struct2 struct {
 
 func makeTempFilename() string {
 	rand.Seed(time.Now().UnixNano())
-	return fmt.Sprintf("%stest-%d", os.TempDir(), rand.Int())
+	return fmt.Sprintf("%s/test-%d", os.TempDir(), rand.Int())
 }
 
 func TestEmptyFileGetsCreated(t *testing.T) {
